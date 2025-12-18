@@ -29,7 +29,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID int32) error {
 	// 3. 跨服务调用 User Service 的 gRPC 接口
 	user, err := s.userClient.GetUserByID(ctx, &pb.GetUserRequest{Id: userID})
 	if err != nil {
-		logger.Log.Error("调用 User 模块失败", zap.Error(err))
+		logger.Log.Error("调用 User 模块失败")
 		return fmt.Errorf("failed to fetch user: %v", err)
 	}
 
