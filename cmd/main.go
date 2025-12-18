@@ -11,15 +11,15 @@ import (
 	"time"
 
 	// 基础库
-	"your_project/api/proto/pb"
-	"your_project/internal/handler"
-	"your_project/internal/middleware"
-	"your_project/internal/repository"
-	"your_project/internal/service"
-	"your_project/pkg/config"
-	"your_project/pkg/database"
-	"your_project/pkg/discovery"
-	"your_project/pkg/logger"
+	"github.com/netkey/golang-user-mysql-redis/api/proto/pb"
+	"github.com/netkey/golang-user-mysql-redis/internal/handler"
+	"github.com/netkey/golang-user-mysql-redis/internal/middleware"
+	"github.com/netkey/golang-user-mysql-redis/internal/repository"
+	"github.com/netkey/golang-user-mysql-redis/internal/service"
+	"github.com/netkey/golang-user-mysql-redis/pkg/config"
+	"github.com/netkey/golang-user-mysql-redis/pkg/database"
+	"github.com/netkey/golang-user-mysql-redis/pkg/discovery"
+	"github.com/netkey/golang-user-mysql-redis/pkg/logger"
 
 	// 外部依赖
 	gqlHandler "github.com/graphql-go/handler"

@@ -3,8 +3,8 @@ package database
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
+	"github.com/netkey/golang-user-mysql-redis/internal/config"
 	"time"
-	"your_project/internal/config"
 )
 
 func NewRedis(cfg config.RedisConfig) (*redis.Client, error) {

@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/netkey/golang-user-mysql-redis/internal/config"
 	"github.com/spf13/viper"
 )
 

@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/graphql-go/graphql"
-	"your_project/internal/service"
+	"github.com/netkey/golang-user-mysql-redis/internal/service"
 )
 
 func NewSchema(svc *service.UserService) (graphql.Schema, error) {

@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"github.com/netkey/golang-user-mysql-redis/internal/model"
 	"time"
-	"your_project/internal/model"
 )
 
 type UserRepository interface {
