@@ -1,0 +1,15 @@
+server:
+  http_port: 8080
+  grpc_port: 50051
+
+mysql:
+  dsn: "root:password@tcp(127.0.0.1:3306)/test_db?parseTime=true"
+  max_open_conns: 25
+  max_idle_conns: 10
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+  pool_size: 100       # 最大活跃连接数
+  min_idle_conns: 20   # 始终保持的最小连接数

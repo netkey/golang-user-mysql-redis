@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// 关键点：这里的路径决定了生成的 go 文件中的 package 声明
+// 建议格式：[go.mod里的模块名]/[生成代码存放的目录]
+option go_package = "github.com/netkey/golang-user-mysql-redis/pkg/pb";
+
+package pb;
+
+service UserService {
+  rpc GetUserByID(GetUserRequest) returns (UserResponse);
+}
+
+message GetUserRequest {
+  int32 id = 1;
+}
+
+message UserResponse {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+}
