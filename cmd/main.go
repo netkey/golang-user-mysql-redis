@@ -11,15 +11,15 @@ import (
 	"time"
 
 	// 基础库
-	"github.com/netkey/golang-user-mysql-redis/api/proto/pb"
+	"github.com/netkey/golang-user-mysql-redis/internal/config"
 	"github.com/netkey/golang-user-mysql-redis/internal/handler"
 	"github.com/netkey/golang-user-mysql-redis/internal/middleware"
 	"github.com/netkey/golang-user-mysql-redis/internal/repository"
 	"github.com/netkey/golang-user-mysql-redis/internal/service"
-	"github.com/netkey/golang-user-mysql-redis/pkg/config"
 	"github.com/netkey/golang-user-mysql-redis/pkg/database"
 	"github.com/netkey/golang-user-mysql-redis/pkg/discovery"
 	"github.com/netkey/golang-user-mysql-redis/pkg/logger"
+	"github.com/netkey/golang-user-mysql-redis/pkg/pb"
 
 	// 外部依赖
 	gqlHandler "github.com/graphql-go/handler"
@@ -73,7 +73,7 @@ func main() {
 
 	// 装饰器模式应用中间件
 	var gqlWithMiddleware http.Handler = h
-	gqlWithMiddleware = middleware.AuthMiddleware(gqlWithMiddleware)
+	gqlWithMiddleware = middleware.AuthMiddleware(cfg.JWT.Secret)(gqlWithMiddleware)
 	gqlWithMiddleware = middleware.MetricsMiddleware(gqlWithMiddleware)
 
 	mux.Handle("/graphql", gqlWithMiddleware)
@@ -86,10 +86,16 @@ func main() {
 
 	// 7. 配置 gRPC 服务器 (用于内部服务间通信)
 	grpcSrv := grpc.NewServer(
+		// 使用 ChainUnaryInterceptor 组合多个中间件
 		grpc.ChainUnaryInterceptor(
-		// 这里可以添加 gRPC 版本的日志和 Trace 中间件
+			middleware.GrpcRecoveryInterceptor, // 1. 异常恢复（最外层）
+			middleware.GrpcLoggingInterceptor,  // 2. 日志记录
+			middleware.GrpcAuthInterceptor,     // 3. 身份验证
+			// 如果后续集成 Jaeger，可以在这里添加 OtelGRPC 拦截器
 		),
 	)
+
+	// 注册服务实现
 	userGRPCHandler := handler.NewUserGRPCHandler(userSvc)
 	pb.RegisterUserServiceServer(grpcSrv, userGRPCHandler)
 

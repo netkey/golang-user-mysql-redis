@@ -2,8 +2,8 @@ package database
 
 import (
 	"context"
-	"github.com/go-redis/redis/v8"
 	"github.com/netkey/golang-user-mysql-redis/internal/config"
+	"github.com/redis/go-redis/v9"
 	"time"
 )
 

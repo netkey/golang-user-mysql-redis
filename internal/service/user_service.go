@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/netkey/golang-user-mysql-redis/internal/model"
+	"github.com/netkey/golang-user-mysql-redis/internal/repository"
 	"golang.org/x/sync/singleflight"
-	"your_project/internal/model"
-	"your_project/internal/repository"
 )
 
 type UserService struct {

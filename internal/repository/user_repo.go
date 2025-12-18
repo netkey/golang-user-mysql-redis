@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"github.com/netkey/golang-user-mysql-redis/internal/model"
+	"github.com/redis/go-redis/v9"
 	"time"
 )
 
