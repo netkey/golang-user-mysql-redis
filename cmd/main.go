@@ -48,7 +48,10 @@ func main() {
 	db.SetMaxIdleConns(cfg.MySQL.MaxIdleConns)
 	defer db.Close()
 
-	rdb := database.NewRedis(cfg.Redis.Addr)
+	rdb, err := database.NewRedis(cfg.Redis)
+	if err != nil {
+		logger.Log.Fatal("Redis 连接失败", zap.Error(err))
+	}
 	defer rdb.Close()
 
 	// 4. 组装依赖注入 (DI)

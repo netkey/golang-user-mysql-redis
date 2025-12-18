@@ -1,6 +1,7 @@
 server:
   http_port: 8080
   grpc_port: 50051
+  internal_ip: "127.0.0.1"
 
 mysql:
   dsn: "root:password@tcp(127.0.0.1:3306)/test_db?parseTime=true"
@@ -9,7 +10,14 @@ mysql:
 
 redis:
   addr: "localhost:6379"
-  password: ""
+  password: "mypass"
   db: 0
   pool_size: 100       # 最大活跃连接数
   min_idle_conns: 20   # 始终保持的最小连接数
+
+jwt:
+  secret: "your-very-secure-secret-key" # 建议在生产环境使用更复杂的密钥
+  expire: 24
+
+etcd:
+  endpoints: ["127.0.0.1:2379"]
