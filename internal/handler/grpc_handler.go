@@ -2,8 +2,8 @@ package handler
 
 import (
 	"context"
-	"github.com/netkey/golang-user-mysql-redis/api/proto/pb"
 	"github.com/netkey/golang-user-mysql-redis/internal/service"
+	"github.com/netkey/golang-user-mysql-redis/pkg/pb"
 )
 
 type UserGRPCHandler struct {
