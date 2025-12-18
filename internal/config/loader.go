@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func LoadConfig(path string) (*config.Config, error) {
+func LoadConfig(path string) (*Config, error) {
 	v := viper.New()
 
 	v.SetConfigFile(path)
@@ -15,7 +15,7 @@ func LoadConfig(path string) (*config.Config, error) {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
 
-	var cfg config.Config
+	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
