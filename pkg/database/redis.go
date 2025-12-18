@@ -17,11 +17,12 @@ func NewRedis(cfg config.RedisConfig) (*redis.Client, error) {
 		PoolSize:     cfg.PoolSize,     // 一般设置为 CPU 核数的 10 倍或根据并发量调整
 		MinIdleConns: cfg.MinIdleConns, // 保持一定数量的空闲连接，减少新建连接的开销
 
-		DialTimeout:  5 * time.Second, // 连接超时
-		ReadTimeout:  3 * time.Second, // 读超时
-		WriteTimeout: 3 * time.Second, // 写超时
-		PoolTimeout:  4 * time.Second, // 如果连接池满了，等待可用连接的超时时间
-		IdleTimeout:  5 * time.Minute, // 空闲连接闲置多久后关闭
+		DialTimeout:     5 * time.Second, // 连接超时
+		ReadTimeout:     3 * time.Second, // 读超时
+		WriteTimeout:    3 * time.Second, // 写超时
+		PoolTimeout:     4 * time.Second, // 如果连接池满了，等待可用连接的超时时间
+		ConnMaxIdleTime: 5 * time.Minute, // 空闲连接闲置多久后关闭
+		ConnMaxLifetime: 2 * time.Hour,
 	})
 
 	// 检查连接是否可用
