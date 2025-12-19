@@ -7,13 +7,13 @@ require (
 	github.com/go-redis/redis_rate/v10 v10.0.1
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/graphql-go/graphql v0.8.1
-	github.com/graphql-go/handler v0.2.4
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.17.2
+	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/viper v1.21.0
 	go.etcd.io/etcd/client/v3 v3.6.7
 	go.uber.org/zap v1.27.1
+	golang.org/x/crypto v0.43.0
 	golang.org/x/sync v0.17.0
 	google.golang.org/grpc v1.77.0
 	google.golang.org/protobuf v1.36.11
