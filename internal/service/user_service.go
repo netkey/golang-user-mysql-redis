@@ -8,8 +8,8 @@ import (
 
 	"github.com/netkey/golang-user-mysql-redis/internal/config"
 	"github.com/netkey/golang-user-mysql-redis/internal/model"
-	"github.com/netkey/golang-user-mysql-redis/internal/pkg/utils" // 确保有 JWT 工具类
 	"github.com/netkey/golang-user-mysql-redis/internal/repository"
+	"github.com/netkey/golang-user-mysql-redis/pkg/utils" // 确保有 JWT 工具类
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sync/singleflight"
 )
