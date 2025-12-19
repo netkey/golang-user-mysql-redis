@@ -22,7 +22,6 @@ import (
 	"github.com/netkey/golang-user-mysql-redis/pkg/pb"
 
 	// 外部依赖
-	gqlHandler "github.com/graphql-go/handler"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -40,6 +39,7 @@ func main() {
 	}
 
 	// 3. 初始化持久化层 (MySQL + Redis 并配置连接池)
+	// 注意：此处 repository 逻辑需要 db 为 *sql.DB
 	db, err := database.NewMySQL(cfg.MySQL.DSN)
 	if err != nil {
 		logger.Log.Fatal("MySQL 连接失败", zap.Error(err))
@@ -57,58 +57,55 @@ func main() {
 	// 4. 组装依赖注入 (DI)
 	// Repo -> Service -> Handler
 	userRepo := repository.NewUserRepository(db, rdb)
-	userSvc := service.NewUserService(userRepo)
+	userSvc := service.NewUserService(userRepo, cfg) // 传入 cfg 供 JWT 使用
+	userHandler := handler.NewUserHandler(userSvc)
 
-	// 5. 初始化 GraphQL Schema
-	schema, err := handler.NewSchema(userSvc)
-	if err != nil {
-		logger.Log.Fatal("GraphQL Schema 创建失败", zap.Error(err))
-	}
-
-	// 6. 配置 HTTP 服务器 (GraphQL + Metrics)
+	// 5. 配置 HTTP 服务器 (REST API + Metrics)
 	mux := http.NewServeMux()
 
-	// GraphQL 端点 + 中间件 (Auth + Prometheus Metrics)
-	h := gqlHandler.New(&gqlHandler.Config{
-		Schema:   &schema,
-		GraphiQL: true,
-	})
-
-	// 装饰器模式应用中间件
-	var gqlWithMiddleware http.Handler = h
-	gqlWithMiddleware = middleware.AuthMiddleware(cfg.JWT.Secret)(gqlWithMiddleware)
-	gqlWithMiddleware = middleware.MetricsMiddleware(gqlWithMiddleware)
-
-	mux.Handle("/graphql", gqlWithMiddleware)
+	// --- A. 公开接口 (无需鉴权) ---
+	mux.HandleFunc("/api/v1/register", userHandler.Register)
+	mux.HandleFunc("/api/v1/login", userHandler.Login)
 	mux.Handle("/metrics", promhttp.Handler()) // Prometheus 采集接口
+
+	// --- B. 私有接口 (应用 JWT 鉴权中间件) ---
+	// 我们可以封装一个简单的路由装饰器或使用第三方路由库，这里使用标准库演示
+	auth := middleware.AuthMiddleware(cfg.JWT.Secret)
+
+	mux.Handle("/api/v1/me", auth(http.HandlerFunc(userHandler.GetProfile)))
+	mux.Handle("/api/v1/profile/update", auth(http.HandlerFunc(userHandler.UpdateProfile)))
+	mux.Handle("/api/v1/friends", auth(http.HandlerFunc(userHandler.ListFriends)))
+	mux.Handle("/api/v1/friend/add", auth(http.HandlerFunc(userHandler.AddFriend)))
+
+	// 全局中间件应用 (如 Prometheus Metrics)
+	var finalHandler http.Handler = mux
+	finalHandler = middleware.MetricsMiddleware(finalHandler)
 
 	httpSrv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.HttpPort),
-		Handler: mux,
+		Handler: finalHandler,
 	}
 
-	// 7. 配置 gRPC 服务器 (用于内部服务间通信)
+	// 6. 配置 gRPC 服务器 (用于内部服务间通信)
 	grpcSrv := grpc.NewServer(
-		// 使用 ChainUnaryInterceptor 组合多个中间件
 		grpc.ChainUnaryInterceptor(
-			middleware.GrpcRecoveryInterceptor, // 1. 异常恢复（最外层）
-			middleware.GrpcLoggingInterceptor,  // 2. 日志记录
-			middleware.GrpcAuthInterceptor,     // 3. 身份验证
-			// 如果后续集成 Jaeger，可以在这里添加 OtelGRPC 拦截器
+			middleware.GrpcRecoveryInterceptor,
+			middleware.GrpcLoggingInterceptor,
+			middleware.GrpcAuthInterceptor,
 		),
 	)
 
-	// 注册服务实现
+	// 注册 gRPC 服务实现
 	userGRPCHandler := handler.NewUserGRPCHandler(userSvc)
 	pb.RegisterUserServiceServer(grpcSrv, userGRPCHandler)
 
-	// 8. 初始化 Etcd 服务注册
+	// 7. 初始化 Etcd 服务注册
 	reg, err := discovery.NewRegister(cfg.Etcd.Endpoints)
 	if err != nil {
 		logger.Log.Fatal("Etcd 初始化失败", zap.Error(err))
 	}
 
-	// 9. 启动服务
+	// 8. 启动服务
 
 	// 启动 gRPC (需先监听端口)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Server.GrpcPort))
@@ -123,7 +120,7 @@ func main() {
 		}
 	}()
 
-	// 启动 HTTP
+	// 启动 HTTP (REST API)
 	go func() {
 		logger.Log.Info("HTTP Server 正在启动", zap.Int("port", cfg.Server.HttpPort))
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -131,7 +128,7 @@ func main() {
 		}
 	}()
 
-	// 10. 服务注册到 Etcd (注册的是 gRPC 的地址，供其他服务发现)
+	// 9. 服务注册到 Etcd
 	grpcAddr := fmt.Sprintf("%s:%d", cfg.Server.InternalIP, cfg.Server.GrpcPort)
 	go func() {
 		err := reg.RegisterService(context.Background(), "user-service", grpcAddr, 10)
@@ -140,24 +137,19 @@ func main() {
 		}
 	}()
 
-	// 11. 优雅关闭 (Graceful Shutdown)
+	// 10. 优雅关闭 (Graceful Shutdown)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	sig := <-quit
 	logger.Log.Info("接收到退出信号", zap.String("signal", sig.String()))
 
-	// 设定最大退出等待时间
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 步骤 A: 从 Etcd 注销服务节点（停止新流量进入）
+	// 按照顺序关闭
 	reg.Stop()
-
-	// 步骤 B: 停止 gRPC 服务
 	grpcSrv.GracefulStop()
-
-	// 步骤 C: 停止 HTTP 服务
 	if err := httpSrv.Shutdown(ctx); err != nil {
 		logger.Log.Error("HTTP Server 强制关闭", zap.Error(err))
 	}

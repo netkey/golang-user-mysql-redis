@@ -21,3 +21,18 @@ jwt:
 
 etcd:
   endpoints: ["127.0.0.1:2379"]
+
+#接口限流
+rate_limit:
+  enable: true
+  default: 60
+  strategies:
+    "/api/v1/user": 100     # 获取用户信息 100次/分
+    "/api/v1/login": 5      # 登录 5次/分
+    "/graphql": 200         # GraphQL 汇总接口 200次/分
+
+#接口缓存
+http_cache:
+  enable: true
+  user_info_ttl: 300   # 5分钟
+  static_data_ttl: 3600 # 1小时

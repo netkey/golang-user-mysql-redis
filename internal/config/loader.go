@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -23,6 +24,16 @@ func LoadConfig(path string) (*Config, error) {
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
+
+	// --- 增加热更新监听 ---
+	v.WatchConfig()
+	v.OnConfigChange(func(e fsnotify.Event) {
+		fmt.Printf("配置文件已修改: %s\n", e.Name)
+		// 重新解析到 cfg 对象中
+		if err := v.Unmarshal(&cfg); err != nil {
+			fmt.Printf("配置热更新失败: %v\n", err)
+		}
+	})
 
 	return &cfg, nil
 }
