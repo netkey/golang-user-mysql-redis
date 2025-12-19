@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/netkey/golang-user-mysql-redis/internal/config"
 	"github.com/netkey/golang-user-mysql-redis/internal/model"

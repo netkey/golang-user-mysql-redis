@@ -1,16 +1,13 @@
 package middleware
 
 import (
-	"context"
 	"github.com/netkey/golang-user-mysql-redis/internal/config"
 	"github.com/redis/go-redis/v9"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/go-redis/redis_rate/v10"
-	"go.uber.org/zap"
 )
 
 type RedisRateLimiter struct {
