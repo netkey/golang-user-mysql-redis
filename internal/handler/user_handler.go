@@ -3,6 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/netkey/golang-user-mysql-redis/pkg/utils"
 	"net/http"
 	"strconv"
 
@@ -213,5 +215,47 @@ func (h *UserHandler) sendJSON(w http.ResponseWriter, code int, msg string, data
 		Code: code,
 		Msg:  msg,
 		Data: data,
+	})
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (h *UserHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	var req RefreshRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.sendJSON(w, http.StatusBadRequest, "参数错误", nil)
+		return
+	}
+
+	// 1. 解析并验证 Refresh Token
+	token, err := jwt.Parse(req.RefreshToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(h.svc.GetJWTSecret()), nil // 这里的 Secret 应该从 config 获取
+	})
+
+	if err != nil || !token.Valid {
+		h.sendJSON(w, http.StatusUnauthorized, "Refresh Token 已失效", nil)
+		return
+	}
+
+	// 2. 校验 Token 类型必须是 refresh
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims["type"] != utils.TokenTypeRefresh {
+		h.sendJSON(w, http.StatusUnauthorized, "无效的 Token 类型", nil)
+		return
+	}
+
+	// 3. 提取 userID 并生成新的一对 Token
+	userID := int(claims["userID"].(float64))
+	newAccess, newRefresh, err := utils.GenerateTokenPair(userID, h.svc.GetJWTSecret())
+	if err != nil {
+		h.sendJSON(w, http.StatusInternalServerError, "生成失败", nil)
+		return
+	}
+
+	h.sendJSON(w, http.StatusOK, "success", map[string]string{
+		"access_token":  newAccess,
+		"refresh_token": newRefresh,
 	})
 }

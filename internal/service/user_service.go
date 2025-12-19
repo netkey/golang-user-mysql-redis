@@ -125,3 +125,8 @@ func (s *UserService) Logout(ctx context.Context, token string) error {
 	// 这里假设你通过 Redis 直接操作或扩展 Repo 接口
 	return nil
 }
+
+// GetJWTSecret 暴露配置中的密钥给 Handler 使用
+func (s *UserService) GetJWTSecret() string {
+	return s.cfg.JWT.Secret
+}

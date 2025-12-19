@@ -5,18 +5,28 @@ import (
 	"time"
 )
 
-// GenerateToken 生成 JWT Token
-func GenerateToken(userID int, secret string, expireHour int) (string, error) {
-	// 1. 创建 Claims（载荷），包含用户 ID 和过期时间
-	claims := jwt.MapClaims{
+const (
+	TokenTypeAccess  = "access"
+	TokenTypeRefresh = "refresh"
+)
+
+// GenerateTokenPair 生成一对 Token
+func GenerateTokenPair(userID int, secret string) (string, string, error) {
+	// Access Token (1 小时)
+	atClaims := jwt.MapClaims{
 		"userID": userID,
-		"exp":    time.Now().Add(time.Hour * time.Duration(expireHour)).Unix(),
-		"iat":    time.Now().Unix(),
+		"type":   TokenTypeAccess,
+		"exp":    time.Now().Add(time.Hour * 1).Unix(),
 	}
+	at, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims).SignedString([]byte(secret))
 
-	// 2. 使用指定的签名密钥创建 token 对象
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	// Refresh Token (7 天)
+	rtClaims := jwt.MapClaims{
+		"userID": userID,
+		"type":   TokenTypeRefresh,
+		"exp":    time.Now().Add(time.Hour * 24 * 7).Unix(),
+	}
+	rt, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims).SignedString([]byte(secret))
 
-	// 3. 签名并获取完整的编码后的字符串 token
-	return token.SignedString([]byte(secret))
+	return at, rt, nil
 }
